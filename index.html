@@ -19,8 +19,18 @@
             --text: #1f2937; --text-light: #6b7280; --border: #e5e7eb;
         }
         body { font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; background-color: var(--bg); margin: 0; padding: 15px; color: var(--text); }
-        .container { max-width: 850px; margin: auto; }
+        .container { max-width: 850px; margin: auto; position: relative; }
         
+        /* 🔒 密碼鎖定畫面樣式 */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(243, 244, 246, 0.95); backdrop-filter: blur(5px); z-index: 9999; display: flex; justify-content: center; align-items: center; transition: 0.3s; }
+        .login-box { background: white; padding: 40px 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 320px; border: 1px solid var(--border); }
+        .login-box h2 { margin-top: 0; color: var(--primary); font-size: 22px; margin-bottom: 20px; }
+        .login-box input { width: 100%; padding: 15px; border: 2px solid var(--border); border-radius: 8px; font-size: 18px; text-align: center; margin-bottom: 15px; letter-spacing: 2px; box-sizing: border-box; outline: none; transition: 0.2s; }
+        .login-box input:focus { border-color: var(--primary); }
+        .login-box button { width: 100%; background: var(--primary); color: white; padding: 15px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .login-box button:hover { background: var(--primary-hover); }
+        #loginError { color: var(--danger); font-size: 14px; margin-top: 10px; font-weight: 600; display: none; }
+
         .header { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-bottom: 25px; padding: 25px 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 16px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .header img.shop-logo { width: 70px; height: 70px; object-fit: contain; background: white; padding: 8px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; }
@@ -92,6 +102,15 @@
     </style>
 </head>
 <body>
+
+<div id="loginOverlay">
+    <div class="login-box">
+        <h2>🔒 POS 系統登入</h2>
+        <input type="password" id="sysPassword" placeholder="請輸入門市密碼" onkeypress="handleEnter(event)">
+        <button onclick="checkPassword()">確認登入</button>
+        <p id="loginError">⚠️ 密碼錯誤，請重試！</p>
+    </div>
+</div>
 
 <div class="container">
     <div class="header">
@@ -179,7 +198,6 @@
             <h2>📅 選擇查看日期</h2>
             <select id="dateSelector" class="date-selector" onchange="handleDateChange()"></select>
         </div>
-
         <div class="dashboard-grid">
             <div class="stat-card">
                 <h3>單日營業額 (<span id="displaySelectedDate">今日</span>)</h3>
@@ -190,7 +208,6 @@
                 <p id="allTimeTotal">$0</p>
             </div>
         </div>
-
         <div class="card">
             <h2>
                 <span>🔍 特定產品查詢</span>
@@ -216,7 +233,6 @@
                 </div>
             </div>
         </div>
-
         <div class="grid-2-col">
             <div class="card">
                 <h2>📅 該日產品明細</h2>
@@ -227,7 +243,6 @@
                     </table>
                 </div>
             </div>
-
             <div class="card">
                 <h2>🏆 歷史產品總結</h2>
                 <div class="table-responsive">
@@ -238,7 +253,6 @@
                 </div>
             </div>
         </div>
-
         <div class="card">
             <h2>📋 完整訂單紀錄</h2>
             <div class="table-responsive">
@@ -263,12 +277,15 @@
 <script>
     // ⚠️ 請務必填入您的 Google Apps Script 網址
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl59_rRowxIR30ZTyPcGawBQAWyALkvH7iWQZhy0BmSe4ecyyv6Pysda8WKvNjW868/exec"; 
+    
+    // 🔑 在這裡設定您的 POS 系統登入密碼
+    const SYSTEM_PASSWORD = "888"; 
 
     // --- PWA Service Worker 註冊 ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('ServiceWorker 註冊成功！', reg.scope))
+                .then(reg => console.log('ServiceWorker 註冊成功！'))
                 .catch(err => console.log('ServiceWorker 註冊失敗: ', err));
         });
     }
@@ -283,7 +300,32 @@
 
     window.onload = function() {
         document.getElementById('orderDate').value = getLocalTodayString();
+        
+        // 檢查 Session 是否已經登入過（只要不關閉分頁就不會重置）
+        if(sessionStorage.getItem('posLoggedIn') === 'true') {
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
     };
+
+    // --- 密碼鎖定邏輯 ---
+    function checkPassword() {
+        const inputPwd = document.getElementById('sysPassword').value;
+        if(inputPwd === SYSTEM_PASSWORD) {
+            sessionStorage.setItem('posLoggedIn', 'true');
+            document.getElementById('loginOverlay').style.opacity = '0';
+            setTimeout(() => { document.getElementById('loginOverlay').style.display = 'none'; }, 300);
+        } else {
+            const errorMsg = document.getElementById('loginError');
+            errorMsg.style.display = 'block';
+            document.getElementById('sysPassword').value = '';
+        }
+    }
+    
+    function handleEnter(e) {
+        if(e.key === 'Enter') checkPassword();
+    }
+
+    // ----------------------
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -293,20 +335,34 @@
         if(tabId === 'dataTab') loadData();
     }
 
+    // 🛠️ 重新優化的加入購物車邏輯 (增加更嚴謹的數值判斷)
     function addToCart() {
-        const product = document.getElementById('product').value;
-        const price = parseFloat(document.getElementById('price').value);
-        const quantity = parseInt(document.getElementById('quantity').value);
+        const productInput = document.getElementById('product');
+        const priceInput = document.getElementById('price');
+        const quantityInput = document.getElementById('quantity');
 
-        if(!product || isNaN(price) || isNaN(quantity) || quantity < 1) return alert("請完整填寫產品、單價與數量！");
+        const product = productInput.value;
+        const price = parseFloat(priceInput.value);
+        const quantity = parseInt(quantityInput.value);
+
+        // 防呆機制：檢查是否為空、是否為非數字
+        if (!product || isNaN(price) || isNaN(quantity) || quantity < 1) {
+            alert("⚠️ 請完整填寫產品、單價與數量！");
+            return;
+        }
 
         const existingItem = cart.find(item => item.product === product && item.price === price);
-        if(existingItem) existingItem.quantity += quantity;
-        else cart.push({ product, price, quantity });
+        if (existingItem) {
+            existingItem.quantity += quantity;
+        } else {
+            cart.push({ product, price, quantity });
+        }
 
-        document.getElementById('product').value = '';
-        document.getElementById('price').value = '';
-        document.getElementById('quantity').value = '1';
+        // 清空輸入框
+        productInput.value = '';
+        priceInput.value = '';
+        quantityInput.value = '1';
+        
         renderCart();
     }
 
@@ -334,7 +390,10 @@
             cartItemsDiv.innerHTML = html;
         }
 
-        let discount = parseFloat(document.getElementById('discountInput').value) || 0;
+        let discountInput = document.getElementById('discountInput').value;
+        let discount = parseFloat(discountInput);
+        if (isNaN(discount)) discount = 0;
+
         let grandTotal = subtotal - discount;
         if (grandTotal < 0) grandTotal = 0; 
 
@@ -354,4 +413,225 @@
         let finalCart = JSON.parse(JSON.stringify(cart)); 
         let discount = parseFloat(document.getElementById('discountInput').value) || 0;
         if (discount > 0) {
-            finalCart.push({ product
+            finalCart.push({ product: '🎁 全單折扣', price: -Math.abs(discount), quantity: 1 });
+        }
+
+        const total = Math.max(0, finalCart.reduce((sum, item) => sum + (item.price * item.quantity), 0));
+        
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+        const formData = new URLSearchParams();
+        formData.append('action', 'add');
+        formData.append('date', selectedDate); 
+        formData.append('time', timeStr);      
+        formData.append('cart', JSON.stringify(finalCart)); 
+        formData.append('total', total);
+        formData.append('payment', document.getElementById('payment').value);
+
+        fetch(SCRIPT_URL, { method: 'POST', body: formData })
+        .then(() => { 
+            alert("✅ 結帳成功！"); 
+            cart = []; 
+            document.getElementById('discountInput').value = 0; 
+            renderCart(); 
+            document.getElementById('orderDate').value = getLocalTodayString();
+        })
+        .catch(() => alert("❌ 結帳失敗，請檢查網路"))
+        .finally(() => { btn.disabled = false; btn.innerText = '💳 確認結帳送出'; });
+    }
+
+    function loadData() {
+        document.getElementById('recordsBody').innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px;">載入資料中...</td></tr>';
+        
+        fetch(SCRIPT_URL)
+        .then(res => res.json())
+        .then(data => {
+            data.forEach(row => {
+                let cartData = [];
+                try { cartData = JSON.parse(row.cart); } catch(e) {}
+                
+                let rowSubtotal = 0;
+                let rowDiscount = 0;
+                
+                cartData.forEach(item => {
+                    if (item.product === '🎁 全單折扣') rowDiscount += Math.abs(item.price);
+                    else rowSubtotal += (item.price * item.quantity);
+                });
+
+                cartData.forEach(item => {
+                    item.itemGross = item.price * item.quantity;
+                    if (item.product === '🎁 全單折扣') {
+                        item.itemNet = item.price; 
+                    } else {
+                        item.itemNet = rowSubtotal > 0 ? item.itemGross - (rowDiscount * (item.itemGross / rowSubtotal)) : item.itemGross;
+                    }
+                });
+                row.parsedCart = cartData; 
+            });
+
+            allOrderData = data;
+            let availableDates = new Set();
+            let allTimeSum = 0;
+            let allTimeProducts = {};
+            let tbodyHTML = '';
+
+            data.forEach(row => {
+                const orderTotal = parseFloat(row.total) || 0;
+                allTimeSum += orderTotal;
+                if(row.date) availableDates.add(row.date); 
+                
+                let productTagsHTML = '<ul class="order-products">';
+                row.parsedCart.forEach(item => {
+                    const isDiscount = item.product === '🎁 全單折扣';
+                    const liClass = isDiscount ? 'class="discount-tag"' : '';
+                    productTagsHTML += `<li ${liClass}>${item.product} ${isDiscount ? `(-$${Math.abs(item.price)})` : `(x${item.quantity})`}</li>`;
+                    
+                    if(!allTimeProducts[item.product]) allTimeProducts[item.product] = { qty: 0, sum: 0 };
+                    allTimeProducts[item.product].qty += item.quantity;
+                    allTimeProducts[item.product].sum += item.itemNet; 
+                });
+                productTagsHTML += '</ul>';
+
+                tbodyHTML += `<tr>
+                        <td>
+                            <strong style="color:var(--primary); font-size:15px;">${row.date}</strong><br>
+                            <span style="color:var(--text-light); font-size:12px;">輸入時間: ${row.time}</span><br>
+                            <span style="display:inline-block; margin-top:4px; padding:2px 6px; background:#f1f5f9; border-radius:4px; font-size:12px;">${row.payment}</span>
+                        </td>
+                        <td>${productTagsHTML}</td>
+                        <td style="font-weight:800; color:var(--success); font-size:16px;">$${orderTotal.toFixed(1)}</td>
+                        <td><button class="btn-delete" onclick="deleteRecord('${row.id}')">刪除</button></td>
+                    </tr>`;
+            });
+
+            document.getElementById('allTimeTotal').innerText = '$' + allTimeSum.toFixed(1);
+            document.getElementById('recordsBody').innerHTML = tbodyHTML || '<tr><td colspan="4" style="text-align:center;">尚無紀錄</td></tr>';
+
+            let allTimeProductHTML = '';
+            for(let prod in allTimeProducts) {
+                const isDiscount = prod === '🎁 全單折扣';
+                const moneyColor = isDiscount ? 'var(--danger)' : 'var(--success)';
+                allTimeProductHTML += `<tr>
+                    <td>${prod}</td>
+                    <td>${isDiscount ? '-' : allTimeProducts[prod].qty}</td>
+                    <td style="color:${moneyColor}; font-weight:bold;">$${allTimeProducts[prod].sum.toFixed(1)}</td>
+                </tr>`;
+            }
+            document.getElementById('allTimeProductList').innerHTML = allTimeProductHTML || '<tr><td colspan="3" style="text-align:center;">尚無銷售</td></tr>';
+
+            const dateSelector = document.getElementById('dateSelector');
+            const todayStr = getLocalTodayString();
+            availableDates.add(todayStr); 
+            
+            const sortedDates = Array.from(availableDates).sort((a, b) => new Date(b) - new Date(a));
+            
+            dateSelector.innerHTML = '';
+            sortedDates.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date;
+                option.innerText = (date === todayStr) ? `今天 (${date})` : date;
+                if(date === todayStr) option.selected = true;
+                dateSelector.appendChild(option);
+            });
+
+            handleDateChange();
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('recordsBody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">載入失敗，請重整頁面</td></tr>';
+        });
+    }
+
+    function handleDateChange() {
+        renderDailyReport();
+        renderProductReport(); 
+    }
+
+    function renderDailyReport() {
+        const selectedDate = document.getElementById('dateSelector').value;
+        const todayStr = getLocalTodayString();
+        document.getElementById('displaySelectedDate').innerText = (selectedDate === todayStr) ? '今日' : selectedDate;
+
+        let dailySum = 0;
+        let dailyProducts = {};
+
+        allOrderData.filter(row => row.date === selectedDate).forEach(row => {
+            dailySum += parseFloat(row.total) || 0;
+            
+            row.parsedCart.forEach(item => {
+                if(!dailyProducts[item.product]) dailyProducts[item.product] = { qty: 0, sum: 0 };
+                dailyProducts[item.product].qty += item.quantity;
+                dailyProducts[item.product].sum += item.itemNet;
+            });
+        });
+
+        document.getElementById('dailyTotal').innerText = '$' + dailySum.toFixed(1);
+
+        let dailyProductHTML = '';
+        for(let prod in dailyProducts) {
+            const isDiscount = prod === '🎁 全單折扣';
+            const moneyColor = isDiscount ? 'var(--danger)' : 'var(--success)';
+            dailyProductHTML += `<tr>
+                <td>${prod}</td>
+                <td>${isDiscount ? '-' : dailyProducts[prod].qty}</td>
+                <td style="color:${moneyColor}; font-weight:bold;">$${dailyProducts[prod].sum.toFixed(1)}</td>
+            </tr>`;
+        }
+        document.getElementById('dailyProductList').innerHTML = dailyProductHTML || '<tr><td colspan="3" style="text-align:center;color:#9ca3af;">該日無銷售紀錄</td></tr>';
+    }
+
+    function renderProductReport() {
+        const selectedProduct = document.getElementById('productFilter').value;
+        const selectedDate = document.getElementById('dateSelector').value;
+        const todayStr = getLocalTodayString();
+        
+        document.getElementById('prodSelectedDateLabel').innerText = (selectedDate === todayStr) ? '今日' : selectedDate;
+
+        if (!selectedProduct) {
+            document.getElementById('prodDailyStat').innerText = '-';
+            document.getElementById('prodTotalStat').innerText = '-';
+            return;
+        }
+
+        let dailyQty = 0, dailyRev = 0;
+        let totalQty = 0, totalRev = 0;
+
+        allOrderData.forEach(row => {
+            row.parsedCart.forEach(item => {
+                if (item.product === selectedProduct) {
+                    totalQty += item.quantity;
+                    totalRev += item.itemNet;
+                    
+                    if (row.date === selectedDate) {
+                        dailyQty += item.quantity;
+                        dailyRev += item.itemNet;
+                    }
+                }
+            });
+        });
+
+        const isDiscount = selectedProduct === '🎁 全單折扣';
+        const qtyTextDaily = isDiscount ? '' : `${dailyQty} 件 / `;
+        const qtyTextTotal = isDiscount ? '' : `${totalQty} 件 / `;
+
+        document.getElementById('prodDailyStat').innerText = `${qtyTextDaily}$${dailyRev.toFixed(1)}`;
+        document.getElementById('prodTotalStat').innerText = `${qtyTextTotal}$${totalRev.toFixed(1)}`;
+    }
+
+    function deleteRecord(id) {
+        if(!confirm("⚠️ 確定要刪除這整筆訂單嗎？（刪除後無法復原）")) return;
+        document.getElementById('recordsBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">🗑️ 刪除中...</td></tr>';
+        
+        const formData = new URLSearchParams();
+        formData.append('action', 'delete');
+        formData.append('id', id);
+
+        fetch(SCRIPT_URL, { method: 'POST', body: formData })
+        .then(() => loadData())
+        .catch(() => alert("❌ 刪除失敗"));
+    }
+</script>
+
+</body>
+</html>
