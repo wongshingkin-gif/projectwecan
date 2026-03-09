@@ -1,21 +1,22 @@
 {
-  "name": "門市智能 POS 系統",
-  "short_name": "店鋪 POS",
-  "description": "專業門市 POS 銷售與報表系統",
+  "name": "心安香憩小站銷售系統",
+  "short_name": "Scent銷售系統",
+  "description": "心安香憩小站銷售系統",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f3f4f6",
   "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
+      "src": "Scent.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
+      "src": "Scent.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
+
 }
