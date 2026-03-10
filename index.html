@@ -19,18 +19,8 @@
             --text: #1f2937; --text-light: #6b7280; --border: #e5e7eb;
         }
         body { font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; background-color: var(--bg); margin: 0; padding: 15px; color: var(--text); }
-        .container { max-width: 850px; margin: auto; position: relative; }
+        .container { max-width: 850px; margin: auto; }
         
-        /* 🔒 密碼鎖定畫面樣式 */
-        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(243, 244, 246, 0.95); backdrop-filter: blur(5px); z-index: 9999; display: flex; justify-content: center; align-items: center; transition: 0.3s; }
-        .login-box { background: white; padding: 40px 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 320px; border: 1px solid var(--border); }
-        .login-box h2 { margin-top: 0; color: var(--primary); font-size: 22px; margin-bottom: 20px; }
-        .login-box input { width: 100%; padding: 15px; border: 2px solid var(--border); border-radius: 8px; font-size: 18px; text-align: center; margin-bottom: 15px; letter-spacing: 2px; box-sizing: border-box; outline: none; transition: 0.2s; }
-        .login-box input:focus { border-color: var(--primary); }
-        .login-box button { width: 100%; background: var(--primary); color: white; padding: 15px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .login-box button:hover { background: var(--primary-hover); }
-        #loginError { color: var(--danger); font-size: 14px; margin-top: 10px; font-weight: 600; display: none; }
-
         .header { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-bottom: 25px; padding: 25px 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 16px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .header img.shop-logo { width: 70px; height: 70px; object-fit: contain; background: white; padding: 8px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; }
@@ -48,9 +38,10 @@
         .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
         .form-group { flex: 1; min-width: 140px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #4b5563; }
-        select, input { width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; transition: 0.3s; background: #f9fafb; }
-        select:focus, input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15); }
-        
+        select, input, textarea { width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; transition: 0.3s; background: #f9fafb; }
+        select:focus, input:focus, textarea:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15); }
+        textarea { resize: vertical; height: 80px; } /* ⭐ 備註欄樣式 */
+
         button { padding: 12px 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-add { background-color: var(--success); color: white; width: 100%; margin-top: 10px; font-size: 16px; }
         .btn-add:hover { background-color: var(--success-hover); transform: translateY(-1px); }
@@ -102,15 +93,6 @@
     </style>
 </head>
 <body>
-
-<div id="loginOverlay">
-    <div class="login-box">
-        <h2>🔒心安香憩小站銷售系統登入</h2>
-        <input type="password" id="sysPassword" placeholder="請輸入門市密碼" onkeypress="handleEnter(event)">
-        <button onclick="checkPassword()">確認登入</button>
-        <p id="loginError">⚠️ 密碼錯誤，請重試！</p>
-    </div>
-</div>
 
 <div class="container">
     <div class="header">
@@ -171,7 +153,7 @@
                 </div>
             </div>
             
-            <hr style="border:0; border-top:1px solid #e5e7eb; margin: 25px 0;">
+            <hr style="border:0; border-top:1px solid #e5e5eb; margin: 25px 0;">
             
             <div class="form-row">
                 <div class="form-group">
@@ -188,16 +170,23 @@
                     </select>
                 </div>
             </div>
+
+            <div class="form-group" style="margin-top: 15px;">
+                <label>📝 備註事項</label>
+                <textarea id="orderNotes" placeholder="可以記下客人的特殊要求或促銷詳情..."></textarea>
+            </div>
             
             <button id="submitOrderBtn" class="btn-submit" onclick="submitOrder()">💳 確認結帳送出</button>
         </div>
     </div>
 
     <div id="dataTab" class="tab-content">
+        
         <div class="top-date-bar">
             <h2>📅 選擇查看日期</h2>
             <select id="dateSelector" class="date-selector" onchange="handleDateChange()"></select>
         </div>
+
         <div class="dashboard-grid">
             <div class="stat-card">
                 <h3>單日營業額 (<span id="displaySelectedDate">今日</span>)</h3>
@@ -208,6 +197,7 @@
                 <p id="allTimeTotal">$0</p>
             </div>
         </div>
+
         <div class="card">
             <h2>
                 <span>🔍 特定產品查詢</span>
@@ -233,6 +223,7 @@
                 </div>
             </div>
         </div>
+
         <div class="grid-2-col">
             <div class="card">
                 <h2>📅 該日產品明細</h2>
@@ -243,6 +234,7 @@
                     </table>
                 </div>
             </div>
+
             <div class="card">
                 <h2>🏆 歷史產品總結</h2>
                 <div class="table-responsive">
@@ -253,6 +245,7 @@
                 </div>
             </div>
         </div>
+
         <div class="card">
             <h2>📋 完整訂單紀錄</h2>
             <div class="table-responsive">
@@ -261,12 +254,12 @@
                         <tr>
                             <th>銷售日期與輸入時間</th>
                             <th>訂單內容</th>
-                            <th>實收總額</th>
+                            <th>備註</th> <th>實收總額</th>
                             <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="recordsBody">
-                        <tr><td colspan="4" style="text-align:center;">載入中...</td></tr>
+                        <tr><td colspan="5" style="text-align:center;">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -276,16 +269,22 @@
 
 <script>
     // ⚠️ 請務必填入您的 Google Apps Script 網址
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl59_rRowxIR30ZTyPcGawBQAWyALkvH7iWQZhy0BmSe4ecyyv6Pysda8WKvNjW868/exec"; 
-    
-    // 🔑 在這裡設定您的 POS 系統登入密碼
-    const SYSTEM_PASSWORD = "888"; 
+    const SCRIPT_URL = "請將您的_網頁應用程式網址_貼在這裡"; 
 
-    // --- PWA Service Worker 註冊 ---
+    // --- PWA Service Worker 註冊與 ⭐ 自動更新邏輯 ⭐ ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('ServiceWorker 註冊成功！'))
+                .then(reg => {
+                    console.log('ServiceWorker 註冊成功！');
+                    
+                    // ⭐ 此監聽器能抓取 Service Worker 激活事件 (activate)
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        console.log('偵測到 Service Worker 已激活最新版，準備自動重新載入網頁。');
+                        // ⭐ 關鍵：檢測到 SW 接管網頁後，立刻自動重整 (location.reload())
+                        location.reload(); 
+                    });
+                })
                 .catch(err => console.log('ServiceWorker 註冊失敗: ', err));
         });
     }
@@ -300,32 +299,7 @@
 
     window.onload = function() {
         document.getElementById('orderDate').value = getLocalTodayString();
-        
-        // 檢查 Session 是否已經登入過（只要不關閉分頁就不會重置）
-        if(sessionStorage.getItem('posLoggedIn') === 'true') {
-            document.getElementById('loginOverlay').style.display = 'none';
-        }
     };
-
-    // --- 密碼鎖定邏輯 ---
-    function checkPassword() {
-        const inputPwd = document.getElementById('sysPassword').value;
-        if(inputPwd === SYSTEM_PASSWORD) {
-            sessionStorage.setItem('posLoggedIn', 'true');
-            document.getElementById('loginOverlay').style.opacity = '0';
-            setTimeout(() => { document.getElementById('loginOverlay').style.display = 'none'; }, 300);
-        } else {
-            const errorMsg = document.getElementById('loginError');
-            errorMsg.style.display = 'block';
-            document.getElementById('sysPassword').value = '';
-        }
-    }
-    
-    function handleEnter(e) {
-        if(e.key === 'Enter') checkPassword();
-    }
-
-    // ----------------------
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -335,7 +309,6 @@
         if(tabId === 'dataTab') loadData();
     }
 
-    // 🛠️ 重新優化的加入購物車邏輯 (增加更嚴謹的數值判斷)
     function addToCart() {
         const productInput = document.getElementById('product');
         const priceInput = document.getElementById('price');
@@ -407,6 +380,9 @@
         const selectedDate = document.getElementById('orderDate').value;
         if(!selectedDate) return alert("請選擇銷售日期！");
 
+        // ⭐ 獲取備註內容
+        const notes = document.getElementById('orderNotes').value;
+
         const btn = document.getElementById('submitOrderBtn');
         btn.disabled = true; btn.innerText = '⏳ 處理中...';
 
@@ -428,12 +404,14 @@
         formData.append('cart', JSON.stringify(finalCart)); 
         formData.append('total', total);
         formData.append('payment', document.getElementById('payment').value);
+        formData.append('notes', notes); // ⭐ 將備註傳送給 GAS
 
         fetch(SCRIPT_URL, { method: 'POST', body: formData })
         .then(() => { 
             alert("✅ 結帳成功！"); 
             cart = []; 
             document.getElementById('discountInput').value = 0; 
+            document.getElementById('orderNotes').value = ""; // ⭐ 清空備註
             renderCart(); 
             document.getElementById('orderDate').value = getLocalTodayString();
         })
@@ -442,7 +420,7 @@
     }
 
     function loadData() {
-        document.getElementById('recordsBody').innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px;">載入資料中...</td></tr>';
+        document.getElementById('recordsBody').innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 30px;">載入資料中...</td></tr>';
         
         fetch(SCRIPT_URL)
         .then(res => res.json())
@@ -500,13 +478,13 @@
                             <span style="display:inline-block; margin-top:4px; padding:2px 6px; background:#f1f5f9; border-radius:4px; font-size:12px;">${row.payment}</span>
                         </td>
                         <td>${productTagsHTML}</td>
-                        <td style="font-weight:800; color:var(--success); font-size:16px;">$${orderTotal.toFixed(1)}</td>
+                        <td style="font-size:13px; color:var(--text-light); white-space: pre-line;">${row.notes || ""}</td> <td style="font-weight:800; color:var(--success); font-size:16px;">$${orderTotal.toFixed(1)}</td>
                         <td><button class="btn-delete" onclick="deleteRecord('${row.id}')">刪除</button></td>
                     </tr>`;
             });
 
             document.getElementById('allTimeTotal').innerText = '$' + allTimeSum.toFixed(1);
-            document.getElementById('recordsBody').innerHTML = tbodyHTML || '<tr><td colspan="4" style="text-align:center;">尚無紀錄</td></tr>';
+            document.getElementById('recordsBody').innerHTML = tbodyHTML || '<tr><td colspan="5" style="text-align:center;">尚無紀錄</td></tr>';
 
             let allTimeProductHTML = '';
             for(let prod in allTimeProducts) {
@@ -539,7 +517,7 @@
         })
         .catch(err => {
             console.error(err);
-            document.getElementById('recordsBody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">載入失敗，請重整頁面</td></tr>';
+            document.getElementById('recordsBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">載入失敗，請重整頁面</td></tr>';
         });
     }
 
@@ -621,7 +599,7 @@
 
     function deleteRecord(id) {
         if(!confirm("⚠️ 確定要刪除這整筆訂單嗎？（刪除後無法復原）")) return;
-        document.getElementById('recordsBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">🗑️ 刪除中...</td></tr>';
+        document.getElementById('recordsBody').innerHTML = '<tr><td colspan="5" style="text-align:center;">🗑️ 刪除中...</td></tr>';
         
         const formData = new URLSearchParams();
         formData.append('action', 'delete');
@@ -635,4 +613,3 @@
 
 </body>
 </html>
-
