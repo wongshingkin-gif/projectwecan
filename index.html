@@ -21,7 +21,6 @@
         body { font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; background-color: var(--bg); margin: 0; padding: 15px; color: var(--text); }
         .container { max-width: 850px; margin: auto; position: relative; }
         
-        /* 🔒 密碼鎖定畫面樣式 (已補回) */
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(243, 244, 246, 0.95); backdrop-filter: blur(5px); z-index: 9999; display: flex; justify-content: center; align-items: center; transition: 0.3s; }
         .login-box { background: white; padding: 40px 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 320px; border: 1px solid var(--border); }
         .login-box h2 { margin-top: 0; color: var(--primary); font-size: 22px; margin-bottom: 20px; }
@@ -32,7 +31,6 @@
         #loginError { color: var(--danger); font-size: 14px; margin-top: 10px; font-weight: 600; display: none; }
 
         .header { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-bottom: 25px; padding: 25px 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 16px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        /* ⭐ 調整 Logo 顯示方式以配合您的 ScentStation 圖片 */
         .header img.shop-logo { width: 90px; height: 90px; object-fit: cover; background: white; padding: 4px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 2px solid white; }
         .header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; }
         
@@ -107,7 +105,7 @@
 
 <div id="loginOverlay">
     <div class="login-box">
-        <h2>🔒 心安香憩小站銷售系統登入</h2>
+        <h2>🔒 Scent Station 銷售系統登入</h2>
         <input type="password" id="sysPassword" placeholder="請輸入門市密碼" onkeypress="handleEnter(event)">
         <button onclick="checkPassword()">確認登入</button>
         <p id="loginError">⚠️ 密碼錯誤，請重試！</p>
@@ -117,7 +115,7 @@
 <div class="container">
     <div class="header">
         <img src="Scent.png" alt="ScentStation Logo" class="shop-logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3144/3144456.png'">
-        <h1>✨ 心安香憩小站銷售系統</h1>
+        <h1>✨ Scent Station銷售系統</h1>
     </div>
 
     <div class="tabs">
@@ -143,11 +141,11 @@
                 </div>
                 <div class="form-group">
                     <label>💲 單價 ($)</label>
-                    <input type="number" id="price" min="0" step="0.1" placeholder="0">
+                    <input type="number" id="price" min="0" step="0.1" placeholder="輸入單價">
                 </div>
                 <div class="form-group">
                     <label>🔢 數量</label>
-                    <input type="number" id="quantity" min="1" value="1">
+                    <input type="number" id="quantity" min="1" placeholder="輸入數量">
                 </div>
             </div>
             <button class="btn-add" onclick="addToCart()">➕ 加入購物車</button>
@@ -165,7 +163,7 @@
                 
                 <div class="discount-input-wrapper">
                     <label for="discountInput" style="margin: 0; color: var(--danger); font-weight: 600;">🎁 全單折扣：-$</label>
-                    <input type="number" id="discountInput" min="0" step="1" value="0" placeholder="0" oninput="renderCart()">
+                    <input type="number" id="discountInput" min="0" step="1" placeholder="金額" oninput="renderCart()">
                 </div>
                 
                 <div class="grand-total-final">
@@ -274,7 +272,8 @@
                         <tr>
                             <th>銷售日期與輸入時間</th>
                             <th>訂單內容</th>
-                            <th>備註</th> <th>實收總額</th>
+                            <th>備註</th>
+                            <th>實收總額</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -291,10 +290,10 @@
     // ⚠️ 1. 請填寫您的 GAS 網址
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQtIH3vS-XzErghSGFQ4g9lOcTbqCLBztvtF8SGwP4MEZild7ZJosO00WwegDorCpg-g/exec"; 
     
-    // 🔑 2. 設定您的 POS 系統登入密碼 (已補回)
+    // 🔑 2. 設定您的 POS 系統登入密碼
     const SYSTEM_PASSWORD = "888"; 
 
-    // --- PWA 自動更新機制 ---
+    // PWA 自動更新機制
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
@@ -316,7 +315,6 @@
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
-    // ⭐ 3. 網頁載入時檢查是否已登入 (已補回)
     window.onload = function() {
         document.getElementById('orderDate').value = getLocalTodayString();
         if(sessionStorage.getItem('posLoggedIn') === 'true') {
@@ -324,7 +322,6 @@
         }
     };
 
-    // ⭐ 4. 密碼檢查邏輯 (已補回)
     function checkPassword() {
         const inputPwd = document.getElementById('sysPassword').value;
         if(inputPwd === SYSTEM_PASSWORD) {
@@ -341,8 +338,6 @@
     function handleEnter(e) {
         if(e.key === 'Enter') checkPassword();
     }
-
-    // ------------------------------------
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -361,6 +356,7 @@
         const price = parseFloat(priceInput.value);
         const quantity = parseInt(quantityInput.value);
 
+        // 嚴謹的防呆檢查
         if (!product || isNaN(price) || isNaN(quantity) || quantity < 1) {
             alert("⚠️ 請完整填寫產品、單價與數量！");
             return;
@@ -373,9 +369,10 @@
             cart.push({ product, price, quantity });
         }
 
+        // ⭐ 加入後完全清空輸入框，不再殘留預設數字
         productInput.value = '';
         priceInput.value = '';
-        quantityInput.value = '1';
+        quantityInput.value = ''; 
         renderCart();
     }
 
@@ -448,7 +445,8 @@
         .then(() => { 
             alert("✅ 結帳成功！"); 
             cart = []; 
-            document.getElementById('discountInput').value = 0; 
+            // ⭐ 結帳成功後完全清空折扣欄
+            document.getElementById('discountInput').value = ""; 
             document.getElementById('orderNotes').value = ""; 
             renderCart(); 
             document.getElementById('orderDate').value = getLocalTodayString();
@@ -652,4 +650,3 @@
 
 </body>
 </html>
-
