@@ -1,6 +1,6 @@
 // 📦 在這裡設定 Cache 版本號，每次修改 index.html 後，請將此版本號 +1 (例如 v2 -> v3)
 // 只要這個版本號改變，Service Worker 就會重新下載並清理舊快取
-const CACHE_NAME = 'pos-system-v2';
+const CACHE_NAME = 'pos-system-v3';
 
 const urlsToCache = [
   './',
@@ -68,3 +68,4 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
