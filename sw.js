@@ -1,5 +1,5 @@
 // 📦 版本號更新為 v4，強制手機更新快取
-const CACHE_NAME = 'pos-system-v4';
+const CACHE_NAME = 'pos-system-v5';
 
 const urlsToCache = [
   './',
@@ -47,3 +47,4 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
