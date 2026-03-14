@@ -102,13 +102,16 @@
         
         .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 650px) { .grid-2-col { grid-template-columns: 1fr; } }
+        
+        /* 隱藏更新按鈕樣式 */
+        .force-update-btn { text-align: center; margin-top: 30px; font-size: 12px; color: #9ca3af; cursor: pointer; padding: 10px; }
     </style>
 </head>
 <body>
 
 <div id="loginOverlay">
     <div class="login-box">
-        <h2>🔒 Scent Station銷售系統登入</h2>
+        <h2>🔒 Scent Station系統登入</h2>
         <input type="password" id="sysPassword" placeholder="請輸入門市密碼" onkeypress="handleEnter(event)">
         <button onclick="checkPassword()">確認登入</button>
         <p id="loginError">⚠️ 密碼錯誤，請重試！</p>
@@ -177,7 +180,7 @@
                 
                 <div class="discount-input-wrapper">
                     <label for="discountInput" style="margin: 0; color: var(--danger); font-weight: 600;">🎁 額外折扣減免：-$</label>
-                    <input type="number" id="discountInput" class="extra-discount" min="0" step="1" placeholder="金額" oninput="renderCart()">
+                    <input type="number" id="discountInput" class="extra-discount" min="0" step="0.1" placeholder="金額" oninput="renderCart()">
                 </div>
                 
                 <div class="grand-total-final">
@@ -257,7 +260,8 @@
                     <option value="蜜桔">蜜桔</option>
                     <option value="薰衣草">薰衣草</option>
                     <option value="屏風套裝">屏風套裝</option>
-                    <option value="書籤">書籤</option>
+                    <option value="書籤套裝">書籤套裝</option>
+                    <option value="書籤(單張)">書籤(單張)</option>
                     <option value="浴鹽">浴鹽</option>
                 </select>
             </h2>
@@ -316,6 +320,8 @@
             </div>
         </div>
     </div>
+    
+    <div class="force-update-btn" onclick="clearCachesAndReload()">v7.0 (點此強制更新系統)</div>
 </div>
 
 <script>
@@ -325,13 +331,38 @@
     // 🔑 2. 設定您的 POS 系統登入密碼
     const SYSTEM_PASSWORD = "888"; 
 
+    // iOS 自動與強制更新機制
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
+            navigator.serviceWorker.register('./sw.js?v=' + new Date().getTime())
                 .then(reg => {
-                    navigator.serviceWorker.addEventListener('controllerchange', () => { location.reload(); });
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                if(confirm('系統有新版本！是否立即載入？')) window.location.reload(true);
+                            }
+                        };
+                    };
                 });
         });
+    }
+
+    // 點擊底部文字強制清除快取
+    function clearCachesAndReload() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) registration.unregister();
+            });
+            caches.keys().then((keyList) => {
+                return Promise.all(keyList.map((key) => caches.delete(key)));
+            }).then(() => {
+                alert("✅ 舊版資料已清空，即將重新載入最新版本！");
+                window.location.reload(true);
+            });
+        } else {
+            window.location.reload(true);
+        }
     }
 
     let cart = []; 
@@ -340,6 +371,11 @@
     function getLocalTodayString() {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+    
+    // ⭐ 精確四捨五入到小數第一位，解決浮點數問題
+    function round1(num) {
+        return Math.round(num * 10) / 10;
     }
 
     window.onload = function() {
@@ -395,22 +431,14 @@
 
     function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
 
-    // 獲取並計算智能折扣率 (共用函數)
     function getCalculatedDiscountRate() {
         let inputVal = document.getElementById('discountRate').value;
-        if (!inputVal) return 1; // 沒填就是不打折 (100%)
-        
+        if (!inputVal) return 1; 
         let val = parseFloat(inputVal);
         if (isNaN(val) || val <= 0) return 1;
         
-        // 智能轉換邏輯：
-        // 如果輸入小於 10 (例如 9, 8.5)，代表 9折(0.9)、85折(0.85)
-        // 如果輸入大於等於 10 (例如 88, 95)，代表 88折(0.88)、95折(0.95)
-        if (val < 10) {
-            return val / 10;
-        } else {
-            return val / 100;
-        }
+        if (val < 10) return val / 10;
+        else return val / 100;
     }
 
     function renderCart() {
@@ -435,18 +463,13 @@
             cartItemsDiv.innerHTML = html;
         }
 
-        // 1. 計算智能打折後的金額
+        // ⭐ 套用精準四捨五入計算
         let discountRate = getCalculatedDiscountRate();
-        let discountedSubtotal = subtotal * discountRate;
+        let discountedSubtotal = round1(subtotal * discountRate);
 
-        // 2. 取得額外折扣金額
         let fixedDiscount = parseFloat(document.getElementById('discountInput').value) || 0;
+        let grandTotal = round1(Math.max(0, discountedSubtotal - fixedDiscount));
 
-        // 3. 計算最終金額
-        let grandTotal = discountedSubtotal - fixedDiscount;
-        if (grandTotal < 0) grandTotal = 0; 
-
-        // 更新畫面數字
         document.getElementById('cartSubtotal').innerText = subtotal.toFixed(1);
         
         if (discountRate < 1) {
@@ -472,14 +495,14 @@
         finalCart.push({ product: `👤 銷售員: ${salesperson}`, price: 0, quantity: 1 });
 
         let subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        
-        // 取得輸入的文字 (例如 "88") 與實際折數 (例如 0.88)
         let discountInputValue = document.getElementById('discountRate').value;
         let discountRate = getCalculatedDiscountRate();
+        
+        // ⭐ 同步結帳顯示與送出紀錄的精準數值
+        let discountedSubtotal = round1(subtotal * discountRate);
 
         if (discountRate < 1) {
-            // 在標籤上顯示客人輸入的折數 (例如 "🏷️ 88折")
-            let rateDiscountAmount = subtotal * (1 - discountRate);
+            let rateDiscountAmount = subtotal - discountedSubtotal;
             finalCart.push({ product: `🏷️ ${discountInputValue}折`, price: -Math.abs(rateDiscountAmount), quantity: 1 });
         }
 
@@ -488,7 +511,7 @@
             finalCart.push({ product: '🎁 額外折扣', price: -Math.abs(fixedDiscount), quantity: 1 });
         }
 
-        const total = Math.max(0, (subtotal * discountRate) - fixedDiscount);
+        const total = round1(Math.max(0, discountedSubtotal - fixedDiscount));
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
@@ -497,7 +520,7 @@
         formData.append('date', selectedDate); 
         formData.append('time', timeStr);      
         formData.append('cart', JSON.stringify(finalCart)); 
-        formData.append('total', total);
+        formData.append('total', total); 
         formData.append('payment', document.getElementById('payment').value);
         formData.append('notes', document.getElementById('orderNotes').value); 
 
@@ -506,7 +529,7 @@
             alert("✅ 結帳成功！"); 
             cart = []; 
             document.getElementById('discountInput').value = ""; 
-            document.getElementById('discountRate').value = ""; // 清空打折欄位
+            document.getElementById('discountRate').value = ""; 
             document.getElementById('orderNotes').value = ""; 
             renderCart(); 
             document.getElementById('orderDate').value = getLocalTodayString();
@@ -542,7 +565,9 @@
                         if (item.product.includes('🎁') || item.product.includes('🏷️')) {
                             item.itemNet = item.price; 
                         } else {
-                            item.itemNet = rowSubtotal > 0 ? item.itemGross - (rowDiscount * (item.itemGross / rowSubtotal)) : item.itemGross;
+                            // ⭐ 對個別產品的報表營收也做四捨五入修正
+                            let calculatedNet = rowSubtotal > 0 ? item.itemGross - (rowDiscount * (item.itemGross / rowSubtotal)) : item.itemGross;
+                            item.itemNet = round1(calculatedNet);
                         }
                     }
                 });
@@ -595,7 +620,7 @@
                     </tr>`;
             });
 
-            document.getElementById('allTimeTotal').innerText = '$' + allTimeSum.toFixed(1);
+            document.getElementById('allTimeTotal').innerText = '$' + round1(allTimeSum).toFixed(1);
             document.getElementById('recordsBody').innerHTML = tbodyHTML || '<tr><td colspan="6" style="text-align:center;">尚無紀錄</td></tr>';
 
             let allTimeProductHTML = '';
@@ -657,7 +682,7 @@
             });
         });
 
-        document.getElementById('dailyTotal').innerText = '$' + dailySum.toFixed(1);
+        document.getElementById('dailyTotal').innerText = '$' + round1(dailySum).toFixed(1);
 
         let dailyProductHTML = '';
         for(let prod in dailyProducts) {
@@ -700,8 +725,8 @@
             });
         });
 
-        document.getElementById('prodDailyStat').innerText = `${dailyQty} 件 / $${dailyRev.toFixed(1)}`;
-        document.getElementById('prodTotalStat').innerText = `${totalQty} 件 / $${totalRev.toFixed(1)}`;
+        document.getElementById('prodDailyStat').innerText = `${dailyQty} 件 / $${round1(dailyRev).toFixed(1)}`;
+        document.getElementById('prodTotalStat').innerText = `${totalQty} 件 / $${round1(totalRev).toFixed(1)}`;
     }
 
     function deleteRecord(id) {
